@@ -69,13 +69,17 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <SourcePath>$(VC_SourcePath);src;</SourcePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);inc;</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>inc</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,6 +127,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\linker.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\symbolTable.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\linker.h" />
+    <ClInclude Include="inc\linkerException.h" />
+    <ClInclude Include="inc\relocationEntry.h" />
+    <ClInclude Include="inc\SectionData.h" />
+    <ClInclude Include="inc\symbolTable.h" />
+    <ClInclude Include="inc\TableEntry.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
