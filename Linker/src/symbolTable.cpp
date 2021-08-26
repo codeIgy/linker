@@ -157,11 +157,69 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 	}
 }
 
+void MySymbolTable::checkIfPlaceable()
+{
+		TableEntry t;
+		for (unsigned i = 0; i < numSectionsGlobal; i++) {
+			TableEntry& s1 = tableGlobal[i];
+			unsigned startAddr = s1.value;
+			unsigned endAddr = s1.value + s1.size;
+			
+			for (unsigned j = i + 1; j < numSectionsGlobal; j++) {
+				TableEntry& s2 = tableGlobal[i];
+				unsigned startAddr2 = s2.value;
+				unsigned endAddr2 = s2.value + s2.size;
+
+				if (doSectionsOverlap(startAddr, endAddr, startAddr2, endAddr2)) {
+					string msg = "Sections ";
+					msg += s1.label + " " + s2.label + " overlap!";
+					throw LinkerException(msg);
+				}
+			}
+		}
+	
+}
+
+bool MySymbolTable::doSectionsOverlap(int start1, int end1, int start2, int end2)
+{
+	if (start1 < start2 && end1 < start2 || start1 > end2 && end1 > end2) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void MySymbolTable::setOrdinals()
 {
 	for (auto it = table.begin() + sectionId; it != table.end(); it++) {
 		it->id = sectionId++;
 	}
+}
+
+TableEntry & MySymbolTable::getSymbol(int id, int fileId)
+{
+	if (id == 0) {
+		return table[id];
+	}
+	else if (id == 1) {
+		return table[id];
+	}
+
+	for (unsigned i = 0; i < table.size(); i++) {
+		TableEntry& symbol = table[i];
+		if (symbol.id == id && symbol.fileId == fileId) {
+			return symbol;
+		}
+	}
+
+	TableEntry t;
+	return t;
+}
+
+TableEntry & MySymbolTable::getSymbolGlobal(unsigned index)
+{
+	return tableGlobal[index];
 }
 
 unordered_set<string> MySymbolTable::getUnknownUsedSymbols()

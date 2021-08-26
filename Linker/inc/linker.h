@@ -6,6 +6,7 @@
 #include "relocationEntry.h"
 #include "SectionData.h"
 #include <unordered_map>
+#include <map>
 
 class Linker
 {
@@ -22,6 +23,7 @@ private:
 	vector<RelocationEntry> relocTable;
 	vector<SectionData> sections;
 	unordered_map<string, int>& places;
+	map<unsigned, string> code;
 	unsigned numOfFiles = 0;
 
 	TableEntry& findSymbol(string name);

@@ -84,7 +84,74 @@ void Linker::generateHex() {
 
 		table.createGlobalTable(places);
 
-		
+		table.checkIfPlaceable();
+
+		//skip UND and ABS sections and copy others
+		for (unsigned i = 2; i < table.numSectionsGlobal; i++) {
+			TableEntry& entry = table.getSymbolGlobal(i);
+			string data = "";
+
+			for (auto section : sections) {
+				if (section.label == entry.label) {
+					data += section.data;
+				}
+			}
+
+			code.insert({ entry.value, data });
+		}
+
+		for (auto section : sections) {
+			TableEntry& sectionEntry = table.getSymbol(section.id, section.fileId);
+			for (auto rEntry : section.relocTable) {
+				TableEntry& entry = table.getSymbol(rEntry.ordinal, section.fileId);
+				rEntry.offset += sectionEntry.value;
+
+				auto mem = code.upper_bound(rEntry.offset);
+				int offset = rEntry.offset - mem->first;
+				if (rEntry.relType == RelocationEntry::R_386_16) {
+					int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+					value += entry.value;
+					mem->second[offset] = (value & 0xFF00) >> 8;
+					mem->second[offset + 1] = (value & 0xFF);
+				}
+				else if (rEntry.relType == RelocationEntry::R_386_16D) {
+					int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+					value += entry.value;
+					mem->second[offset] = (value & 0xFF);
+					mem->second[offset + 1] = (value & 0xFF00) >> 8;
+				}
+				else if (rEntry.relType == RelocationEntry::R_386_PC16) {
+					if (entry.id == 1) //ABS
+					{
+						int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+						value -= offset;
+						mem->second[offset] = (value & 0xFF00) >> 8;
+						mem->second[offset + 1] = (value & 0xFF);
+					}
+					else {
+						int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+						value += entry.value - offset;
+						mem->second[offset] = (value & 0xFF00) >> 8;
+						mem->second[offset + 1] = (value & 0xFF);
+					}
+				}
+				else if (rEntry.relType == RelocationEntry::R_386_PC16D) {
+					if (entry.id == 1) //ABS
+					{
+						int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+						value -= offset;
+						mem->second[offset] = (value & 0xFF);
+						mem->second[offset + 1] = (value & 0xFF00) >> 8;
+					}
+					else {
+						int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+						value += entry.value - offset;
+						mem->second[offset] = (value & 0xFF);
+						mem->second[offset + 1] = (value & 0xFF00) >> 8;
+					}
+				}
+			}
+		}
 	}
 	catch (LinkerException e) {
 		cout << "Error :" << e.getMsg() << endl;

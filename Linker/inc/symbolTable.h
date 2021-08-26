@@ -15,6 +15,9 @@ using namespace std;
 class MySymbolTable
 {
 public:
+	unsigned numSections = 2;
+	unsigned numSectionsGlobal = 0;
+
 	MySymbolTable();
 	~MySymbolTable();
 
@@ -22,6 +25,11 @@ public:
 
 	void createGlobalTable(unordered_map<string, int>& places);
 
+	void checkIfPlaceable();
+
+	bool doSectionsOverlap(int start1, int end1, int start2, int end2);
+
+	
 	//when we reach end of a section we need to update its size in the table
 	void updateSectionSize(int entryNum, int size);
 	
@@ -37,8 +45,10 @@ public:
 	//after the first pass we need to enumerate non-section table entries (give them ids)
 	void setOrdinals();
 
+	TableEntry& getSymbol(int id, int fileId);
+
 	//return symbol data
-	TableEntry& getSymbol(string name);
+	TableEntry& getSymbolGlobal(unsigned index);
 
 	//acquire undefined and undeclared symbols if any
 	unordered_set<string> getUnknownUsedSymbols();
@@ -51,9 +61,8 @@ private:
 	vector<TableEntry> table;
 	vector<TableEntry> tableGlobal;
 	int sectionId = 0;
-	unsigned numSections = 2;
 	int idGlobal = 0;;
-	unsigned numSectionsGlobal = 0;
+	
 
 	bool canBeDeclaredGlobal(TableEntry& entry);
 
