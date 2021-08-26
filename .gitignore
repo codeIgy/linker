@@ -4,6 +4,8 @@
 #Linker 
 Linker/*.o
 Linker/*.o.txt
+tests/*.txt
+tests/*.o
 
 # User-specific files
 *.suo

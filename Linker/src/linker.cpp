@@ -1,5 +1,6 @@
 #include "linker.h"
 #include <iostream>
+#include <iomanip>
 
 void Linker::addObjectFile(ifstream& inputFile) {
 	try {
@@ -106,16 +107,24 @@ void Linker::generateHex() {
 				TableEntry& entry = table.getSymbol(rEntry.ordinal, section.fileId);
 				rEntry.offset += sectionEntry.value;
 
-				auto mem = code.upper_bound(rEntry.offset);
-				int offset = rEntry.offset - mem->first;
+				auto mem = code.lower_bound(rEntry.offset);
+				string block;
+				if (mem == code.end()) {
+					mem = prev(code.end());
+				}
+				else if (mem->first != rEntry.offset)
+				{
+					mem--;
+				}
+				int offset = rEntry.offset - sectionEntry.value;
 				if (rEntry.relType == RelocationEntry::R_386_16) {
-					int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+					short value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
 					value += entry.value;
 					mem->second[offset] = (value & 0xFF00) >> 8;
 					mem->second[offset + 1] = (value & 0xFF);
 				}
 				else if (rEntry.relType == RelocationEntry::R_386_16D) {
-					int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+					short value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
 					value += entry.value;
 					mem->second[offset] = (value & 0xFF);
 					mem->second[offset + 1] = (value & 0xFF00) >> 8;
@@ -123,14 +132,15 @@ void Linker::generateHex() {
 				else if (rEntry.relType == RelocationEntry::R_386_PC16) {
 					if (entry.id == 1) //ABS
 					{
-						int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
-						value -= offset;
+						short value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+						value -= rEntry.offset;
 						mem->second[offset] = (value & 0xFF00) >> 8;
 						mem->second[offset + 1] = (value & 0xFF);
 					}
 					else {
-						int value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
-						value += entry.value - offset;
+						// ne radi dobro kad je negativan!
+						short value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
+						value += entry.value - rEntry.offset;
 						mem->second[offset] = (value & 0xFF00) >> 8;
 						mem->second[offset + 1] = (value & 0xFF);
 					}
@@ -138,20 +148,22 @@ void Linker::generateHex() {
 				else if (rEntry.relType == RelocationEntry::R_386_PC16D) {
 					if (entry.id == 1) //ABS
 					{
-						int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
-						value -= offset;
+						short value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+						value -= rEntry.offset;
 						mem->second[offset] = (value & 0xFF);
 						mem->second[offset + 1] = (value & 0xFF00) >> 8;
 					}
 					else {
-						int value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
-						value += entry.value - offset;
+						short value = (mem->second[offset + 1] << 8) | (mem->second[offset]);
+						value += entry.value - rEntry.offset;
 						mem->second[offset] = (value & 0xFF);
 						mem->second[offset + 1] = (value & 0xFF00) >> 8;
 					}
 				}
 			}
 		}
+
+		writeHexFile();
 	}
 	catch (LinkerException e) {
 		cout << "Error :" << e.getMsg() << endl;
@@ -160,4 +172,41 @@ void Linker::generateHex() {
 
 void Linker::generateLinkable() {
 
+}
+
+void Linker::writeHexFile()
+{
+	int prevAddr = -1;
+	unsigned offset = -1;
+	int addr;
+	for (auto block : code) {
+		addr = 8 * (block.first / 8);
+		string& data = block.second;
+		
+		if (prevAddr != addr) {
+			if (prevAddr != -1) {
+				outputFile << endl << endl;
+			}
+			offset = block.first % 8;
+			outputFile << setw(4) << setfill('0') << hex << addr << ": ";
+			for (unsigned i = 0; i < offset; i++) {
+				outputFile << "   ";
+			}
+		}
+
+		for (unsigned i = 0; i < data.size(); i++) {
+			if (offset == 8) {
+				offset = 0;
+				addr += 8;
+				outputFile << endl;
+				outputFile << setw(4) << setfill('0') << hex << addr << ": ";
+			}
+			outputFile << setw(2) << setfill('0') << hex << ((unsigned)data[i] & 0xFF);
+
+			if (++offset < 8) {
+				outputFile << " ";
+			}
+		}
+		prevAddr = addr;
+	}
 }

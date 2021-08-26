@@ -146,7 +146,6 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 		unordered_map<string, TableEntry>::iterator get = global.find(extSym.label);
 		if (get != global.end()) {
 			extSym.value = get->second.value;
-			extSym.id = get->second.id;
 		}
 		else {
 			TableEntry newSym;
@@ -213,7 +212,7 @@ TableEntry & MySymbolTable::getSymbol(int id, int fileId)
 		}
 	}
 
-	TableEntry t;
+	TableEntry& t =  table[0];
 	return t;
 }
 

@@ -26,6 +26,6 @@ private:
 	map<unsigned, string> code;
 	unsigned numOfFiles = 0;
 
-	TableEntry& findSymbol(string name);
+	void writeHexFile();
 };
 #endif // !LINKER_H
