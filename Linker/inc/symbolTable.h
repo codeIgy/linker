@@ -25,6 +25,8 @@ public:
 
 	void createGlobalTable(unordered_map<string, int>& places);
 
+	void createGlobalTableLinkable();
+
 	void checkIfPlaceable();
 
 	bool doSectionsOverlap(int start1, int end1, int start2, int end2);
@@ -54,6 +56,8 @@ public:
 	unordered_set<string> getUnknownUsedSymbols();
 
 	void printSymbolTable(ofstream& outputFileTxt, ofstream& outputFileBinary);
+
+	void printSymbolTableGlobal(ofstream& outputFileTxt);
 
 private:
 	unordered_set<string> definedGlobalSymbols;

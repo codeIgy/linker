@@ -22,10 +22,12 @@ private:
 	MySymbolTable table;
 	vector<RelocationEntry> relocTable;
 	vector<SectionData> sections;
+	vector<SectionData> sectionsGlobal;
 	unordered_map<string, int>& places;
 	map<unsigned, string> code;
 	unsigned numOfFiles = 0;
 
 	void writeHexFile();
+	void writeObjectFile();
 };
 #endif // !LINKER_H

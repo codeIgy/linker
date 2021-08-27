@@ -22,5 +22,6 @@ public:
 	bool isExt = false;//whether symbol is extern
 	int size = 0;//section size
 	int fileId = 0;
+	int globalId = 0;
 };
 #endif // !TABLEENTRY_H

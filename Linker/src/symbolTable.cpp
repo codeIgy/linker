@@ -112,7 +112,7 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 
 		for (unsigned j = 0; j < numSections; j++) {
 			TableEntry& section = table[j];
-			if (section.id == symbol.section && symbol.fileId == section.fileId) {
+			if (section.id == symbol.section && (symbol.fileId == section.fileId || symbol.section == 1 || symbol.section == 0)) {
 				newSym.value = symbol.value + section.value;
 				symbol.value = newSym.value;
 				label = section.label;
@@ -121,8 +121,8 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 		}
 		
 		for (unsigned j = 0; j < numSectionsGlobal; j++) {
-			if (label == table[j].label) {
-				newSym.section = table[j].id;
+			if (label == tableGlobal[j].label) {
+				newSym.section = tableGlobal[j].id;
 			}
 		}
 
@@ -156,16 +156,117 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 	}
 }
 
+void MySymbolTable::createGlobalTableLinkable()
+{
+	for (unsigned i = 0; i < numSections; i++) {
+		TableEntry newSec;
+		TableEntry& sec1 = table[i];
+
+		if (sec1.isExt) //that section has been merged already
+			continue;
+		int address = 0;
+
+		newSec.id = idGlobal;
+		newSec.section = idGlobal;
+		newSec.label = sec1.label;
+		newSec.visibility = sec1.visibility;
+		newSec.value = address;
+		newSec.size = sec1.size;
+		newSec.isExt = false;
+		newSec.fileId = 0;
+
+		sec1.value = newSec.value;
+		sec1.globalId = idGlobal;
+
+		address = address + newSec.size;
+		for (unsigned j = i + 1; j < numSections; j++) {
+			TableEntry& sec2 = table[j];
+			if (sec2.label == sec1.label) {
+				table[j].isExt = true;//mark
+				table[j].value = address;
+				table[j].globalId = idGlobal;
+				newSec.size += sec2.size;
+				address += sec2.size;
+			}
+		}
+		idGlobal++;
+		numSectionsGlobal++;
+		tableGlobal.push_back(newSec);
+	}
+
+	vector<int> external;
+	unordered_map<string, TableEntry> global;
+	for (unsigned i = numSections; i < table.size(); i++) {
+		TableEntry& symbol = table[i];
+		if (symbol.isExt) {
+			external.push_back(i);
+			continue;
+		}
+
+		TableEntry newSym;
+		string label;
+
+		for (unsigned j = 0; j < numSections; j++) {
+			TableEntry& section = table[j];
+			if (section.id == symbol.section && (symbol.fileId == section.fileId || symbol.section == 1 || symbol.section == 0)) {
+				newSym.value = symbol.value + section.value;
+				symbol.value = newSym.value;
+				label = section.label;
+				break;
+			}
+		}
+
+		for (unsigned j = 0; j < numSectionsGlobal; j++) {
+			if (label == tableGlobal[j].label) {
+				newSym.section = tableGlobal[j].id;
+			}
+		}
+
+		newSym.id = idGlobal;
+		newSym.visibility = symbol.visibility;
+		newSym.label = symbol.label;
+		newSym.isExt = symbol.isExt;
+		newSym.size = symbol.size;
+		newSym.fileId = symbol.fileId;
+
+		symbol.globalId = idGlobal;
+
+		if (newSym.visibility == 'g') {
+			global.insert({ newSym.label, newSym });
+		}
+
+		idGlobal++;
+		tableGlobal.push_back(newSym);
+	}
+
+	for (unsigned i = 0; i < external.size(); i++) {
+		TableEntry& extSym = table[external[i]];
+		unordered_map<string, TableEntry>::iterator get = global.find(extSym.label);
+		if (get != global.end()) {
+			extSym.value = get->second.value; 
+			extSym.globalId = get->second.id;
+		}
+		else {
+			TableEntry newSym;
+			newSym = extSym;
+			newSym.id = idGlobal;
+			newSym.globalId = idGlobal;
+			idGlobal++;
+			tableGlobal.push_back(newSym);
+		}
+	}
+}
+
 void MySymbolTable::checkIfPlaceable()
 {
 		TableEntry t;
-		for (unsigned i = 0; i < numSectionsGlobal; i++) {
+		for (unsigned i = 2; i < numSectionsGlobal; i++) {
 			TableEntry& s1 = tableGlobal[i];
 			unsigned startAddr = s1.value;
 			unsigned endAddr = s1.value + s1.size;
 			
 			for (unsigned j = i + 1; j < numSectionsGlobal; j++) {
-				TableEntry& s2 = tableGlobal[i];
+				TableEntry& s2 = tableGlobal[j];
 				unsigned startAddr2 = s2.value;
 				unsigned endAddr2 = s2.value + s2.size;
 
@@ -180,12 +281,12 @@ void MySymbolTable::checkIfPlaceable()
 }
 
 bool MySymbolTable::doSectionsOverlap(int start1, int end1, int start2, int end2)
-{
-	if (start1 < start2 && end1 < start2 || start1 > end2 && end1 > end2) {
-		return true;
+{	
+	if ( end1 <= start2 || start1 >= end2 ) {
+		return false;
 	}
 	else {
-		return false;
+		return true;
 	}
 }
 
@@ -247,6 +348,15 @@ void MySymbolTable::printSymbolTable(ofstream & outputFileTxt, ofstream & output
 		outputFileBinary.write(reinterpret_cast<char*> (&entry.visibility), sizeof(entry.visibility));
 		outputFileBinary.write(reinterpret_cast<char*> (&entry.isExt), sizeof(entry.isExt));
 		outputFileBinary.write(reinterpret_cast<char*> (&entry.size), sizeof(entry.size));
+	}
+}
+
+void MySymbolTable::printSymbolTableGlobal(ofstream & outputFileTxt)
+{
+	outputFileTxt << setw(10) << left << hex << "id" << setw(15) << "name" << setw(10) << "section" << setw(10) << "value" << setw(12) << "visibility" << setw(10) << "is extern" << setw(10) << "size" << endl;
+
+	for (auto entry : tableGlobal) {
+		outputFileTxt << setw(10) << left << hex << entry.id << setw(15) << entry.label << setw(10) << entry.section << setw(10) << entry.value << setw(12) << entry.visibility << setw(10) << entry.isExt << setw(10) << entry.size << endl;
 	}
 }
 
