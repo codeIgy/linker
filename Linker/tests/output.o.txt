@@ -1,0 +1,56 @@
+id        name           section   value     visibility  is extern size      
+0         UND            0         0         l           0         0         
+1         ABS            1         0         l           0         0         
+2         myCode         2         0         l           0         1c        
+3         myData         3         0         l           0         2         
+4         ivt            4         0         l           0         10        
+5         isr            5         0         l           0         3e        
+6         myStart        2         0         g           0         0         
+7         myCounter      3         0         g           0         0         
+8         tim_cfg        1         ff10      l           0         0         
+9         wait           2         a         l           0         0         
+a         term_out       1         ff00      l           0         0         
+b         term_in        1         ff02      l           0         0         
+c         asciiCode      1         54        l           0         0         
+d         isr_reset      5         0         l           0         0         
+e         isr_timer      5         5         l           0         0         
+f         isr_terminal   5         16        l           0         0         
+$.myCode:1c
+0000: a0 0f 00 00 01 b0 0f 04
+0008: ff 10 a0 0f 04 00 00 a0
+0010: 1f 00 00 05 74 01 52 ff
+0018: 00 00 0a 00 
+$relocation data
+offset    type        ordinal   
+d         R_386_16    7
+19        R_386_16    2
+
+$.myData:2
+0000: 00 00 
+$relocation data
+offset    type        ordinal   
+
+$.ivt:10
+0000: 00 00 00 00 05 00 16 00
+0008: 00 00 00 00 00 00 00 00
+$relocation data
+offset    type        ordinal   
+0         R_386_16D   5
+4         R_386_16D   5
+6         R_386_16D   5
+
+$.isr:3e
+0000: 50 ff 00 00 00 b0 06 12
+0008: a0 0f 00 00 54 b0 0f 04
+0010: ff 00 a0 06 42 20 b0 06
+0018: 12 b0 16 12 a0 0f 04 ff
+0020: 02 b0 0f 04 ff 00 a0 07
+0028: 03 ff fe a0 1f 00 00 01
+0030: 70 01 b0 0f 04 00 00 a0
+0038: 16 42 a0 06 42 20 
+$relocation data
+offset    type        ordinal   
+3         R_386_16    6
+29        R_386_PC16  7
+35        R_386_16    7
+
