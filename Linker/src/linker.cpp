@@ -138,7 +138,6 @@ void Linker::generateHex() {
 						mem->second[offset + 1] = (value & 0xFF);
 					}
 					else {
-						// ne radi dobro kad je negativan!
 						short value = (mem->second[offset] << 8) | (mem->second[offset + 1]);
 						value += entry.value - rEntry.offset;
 						mem->second[offset] = (value & 0xFF00) >> 8;
@@ -195,6 +194,15 @@ void Linker::generateLinkable() {
 
 					TableEntry& symbol = table.getSymbol(rel.ordinal, section.fileId);
 					rel.ordinal = symbol.globalId;
+
+					TableEntry& symbolSection = table.getSymbol(symbol.section, section.fileId);
+
+					if (rel.relType == RelocationEntry::R_386_PC16 && newSecData.id == symbolSection.globalId) {
+						short addend = ((newSecData.data[rel.offset] & 0xFF) << 8) | (newSecData.data[rel.offset + 1] & 0xFF);
+						addend += symbol.value - rel.offset;
+						newSecData.data[rel.offset] = (addend & 0xFF00) >> 8;
+						newSecData.data[rel.offset + 1] = (addend & 0xFF);
+					}
 
 					newSecData.relocTable.push_back(rel);
 				}
