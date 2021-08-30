@@ -4,12 +4,12 @@
 
 void Linker::addObjectFile(ifstream& inputFile) {
 	try {
-		size_t tableSize;
+		unsigned tableSize;
 		inputFile.read(reinterpret_cast<char*>(&tableSize), sizeof(tableSize));
 		for (unsigned i = 0; i < tableSize; i++) {
 			TableEntry entry;
 			inputFile.read(reinterpret_cast<char*>(&entry.id), sizeof(entry.id));
-			size_t labelSize;
+			unsigned labelSize;
 			inputFile.read(reinterpret_cast<char*>(&labelSize), sizeof(labelSize));
 			char* buffer = new char[labelSize];
 			inputFile.read(buffer, labelSize);
@@ -28,14 +28,14 @@ void Linker::addObjectFile(ifstream& inputFile) {
 		}
 
 		//read sections: code and reloc tables
-		int numberOfSections;
+		unsigned numberOfSections;
 		inputFile.read(reinterpret_cast<char*>(&numberOfSections), sizeof(numberOfSections));
 		numberOfSections -= 2; //remove UND and ABS
 
 		for (int i = 0; i < numberOfSections; i++) {
-			size_t labelSize;
+			unsigned labelSize;
 			SectionData s;
-			inputFile.read(reinterpret_cast<char*>(&s.id), sizeof(&s.id));
+			inputFile.read(reinterpret_cast<char*>(&s.id), sizeof(s.id));
 			inputFile.read(reinterpret_cast<char*>(&labelSize), sizeof(labelSize));
 			char* buffer = new char[labelSize];
 			inputFile.read(buffer, labelSize);
@@ -49,7 +49,7 @@ void Linker::addObjectFile(ifstream& inputFile) {
 			delete buffer;
 			s.fileId = numOfFiles;
 
-			size_t relocSize;
+			unsigned relocSize;
 			inputFile.read(reinterpret_cast<char*>(&relocSize), sizeof(relocSize));
 			for (unsigned j = 0; j < relocSize; j++) {
 				RelocationEntry r;
@@ -195,16 +195,15 @@ void Linker::generateLinkable() {
 					TableEntry& symbol = table.getSymbol(rel.ordinal, section.fileId);
 					rel.ordinal = symbol.globalId;
 
-					TableEntry& symbolSection = table.getSymbol(symbol.section, section.fileId);
+					TableEntry& symbolGlobal = table.getSymbolGlobal(symbol.globalId);
 
-					if (rel.relType == RelocationEntry::R_386_PC16 && newSecData.id == symbolSection.globalId) {
+					if (rel.relType == RelocationEntry::R_386_PC16 && newSecData.id == symbolGlobal.section) {
 						short addend = ((newSecData.data[rel.offset] & 0xFF) << 8) | (newSecData.data[rel.offset + 1] & 0xFF);
 						addend += symbol.value - rel.offset;
 						newSecData.data[rel.offset] = (addend & 0xFF00) >> 8;
 						newSecData.data[rel.offset + 1] = (addend & 0xFF);
 					}
-
-					newSecData.relocTable.push_back(rel);
+					else newSecData.relocTable.push_back(rel);
 				}
 
 			}

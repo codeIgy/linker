@@ -335,12 +335,12 @@ void MySymbolTable::printSymbolTable(ofstream & outputFileTxt, ofstream & output
 		outputFileTxt << setw(10) << left << hex << entry.id << setw(15) << entry.label << setw(10) << entry.section << setw(10) << entry.value << setw(12) << entry.visibility << setw(10) << entry.isExt << setw(10) << entry.size << endl;
 	}
 
-	size_t tableSize = table.size();
+	unsigned tableSize = table.size();
 
 	outputFileBinary.write(reinterpret_cast<char*> (&tableSize), sizeof(tableSize));
 	for (auto entry : table) {
 		outputFileBinary.write(reinterpret_cast<char*> (&entry.id), sizeof(entry.id));
-		size_t labelSize = entry.label.size();
+		unsigned labelSize = entry.label.size();
 		outputFileBinary.write(reinterpret_cast<char*> (&labelSize), sizeof(labelSize));
 		outputFileBinary.write(entry.label.c_str(), sizeof(entry.label.size()));
 		outputFileBinary.write(reinterpret_cast<char*> (&entry.section), sizeof(entry.section));
