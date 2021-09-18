@@ -37,7 +37,7 @@ void MySymbolTable::insertSymbol(TableEntry& entryT) {
 
 void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 {
-	int maxAddr = 0, maxAddrSectionSize = 0;
+	int maxAddr = -1, maxAddrSectionSize = 0;
 	string name = "";
 	for (auto addr : places) {
 		if (addr.second > maxAddr) {
@@ -52,7 +52,7 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 		}
 	}
 
-	int oldAddress = maxAddr + maxAddrSectionSize;
+	int oldAddress = (maxAddr == -1 ? 0 : maxAddr) + maxAddrSectionSize;
 	bool placeAddress = false;
 	for (unsigned i = 0; i < numSections; i++) {
 		TableEntry newSec;
@@ -94,8 +94,8 @@ void MySymbolTable::createGlobalTable(unordered_map<string, int>& places)
 
 		if (!placeAddress) {
 			oldAddress += newSec.size;
-			placeAddress = false;
 		}
+		placeAddress = false;
 	}
 
 	vector<int> external;
